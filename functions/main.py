@@ -28,27 +28,55 @@ Also, try not to hurt the student's feelings. You may use emojis to soften your 
 Since the student is native {student_language} speaker, you MUST reply in {student_language}.
 DO NOT just translate student's answer; give some educational feedback so that student can learn English.
 """
+cors_headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "3600",
+}
 
 @https_fn.on_request()
 def lingua_franca_openai_proxy(req: https_fn.Request) -> https_fn.Response:
+    if req.method == "OPTIONS":
+        print("Detected CORS preflight request, returning 204...")
+        return https_fn.Response(
+            headers=cors_headers,
+            response="OK",
+            status=204,
+        )
+
     secret_client = SecretManagerServiceClient()
     try:
         openai.api_key = secret_client.access_secret_version(name="projects/473139429425/secrets/openai-api/versions/latest").payload.data.decode("utf-8").rstrip()
     except Exception as e:
-        return https_fn.Response(response=f"Failed to get OpenAI API key: {e}", status=500)
+        return https_fn.Response(
+            headers=cors_headers,
+            response=f"Failed to get OpenAI API key: {e}", 
+            status=500)
     try:
         req_json = req.get_json()
     except Exception as e:
-        return https_fn.Response(response=f"Failed to parse request JSON: {e}", status=400)
+        return https_fn.Response(
+            headers=cors_headers,
+            response=f"Failed to parse request JSON: {e}", 
+            status=400,
+        )
     if "messages" not in req_json:
         msg = "Missing \"messages\" field in request JSON"
         print(msg)
-        return https_fn.Response(response=msg, status=400)
+        return https_fn.Response(
+            headers=cors_headers,
+            response=msg, 
+            status=400,
+        )
     messages = req_json["messages"]
     if "student_language" not in req_json:
         msg = "Missing \"student_language\" field in request JSON"
         print(msg)
-        return https_fn.Response(response=msg, status=400)
+        return https_fn.Response(
+            headers=cors_headers,
+            response=msg, 
+            status=400)
     student_language = req_json["student_language"]
     # Message slicing is done by client now.
     previous_messages: List[Dict[str, str]] = messages
@@ -105,4 +133,7 @@ def lingua_franca_openai_proxy(req: https_fn.Request) -> https_fn.Response:
     }
     print("response dict dump: ")
     print(json.dumps(response_dict, indent=2))
-    return jsonify(response_dict)
+    response = jsonify(response_dict)
+    response.headers = cors_headers
+    # response.status = 200
+    return response
