@@ -93,15 +93,15 @@ def lingua_franca_openai_proxy(req: https_fn.Request) -> https_fn.Response:
 
     # Message slicing is done by client now.
     previous_messages: List[Dict[str, str]] = messages
-    # latest_user_message_candidates = [message for message in previous_messages if message["id"] == last_user_message_id]
-    # if len(latest_user_message_candidates) == 0:
-    #     msg = f"Could not find message with id {last_user_message_id}"
-    #     print(msg)
-    #     return https_fn.Response(
-    #         headers=cors_headers,
-    #         response=msg, 
-    #         status=400)
-    # latest_user_message = latest_user_message_candidates[0]
+    latest_user_message_candidates = [message for message in previous_messages if message["id"] == last_user_message_id]
+    if len(latest_user_message_candidates) == 0:
+        msg = f"Could not find message with id {last_user_message_id}"
+        print(msg)
+        return https_fn.Response(
+            headers=cors_headers,
+            response=msg, 
+            status=400)
+    latest_user_message = latest_user_message_candidates[0]
 
     # This loop also removes the "id" field from the `latest_user_message`
     for message in previous_messages:
@@ -145,8 +145,8 @@ def lingua_franca_openai_proxy(req: https_fn.Request) -> https_fn.Response:
                 "role": "system", 
                 "content": feedback_system_prompt.format(student_language=student_language),
             },
-            # latest_user_message,
-            *previous_messages,
+            latest_user_message,
+            # *previous_messages,
         ],
     )
     def parse_openai_response_dict(response: Dict[str, Any]):
