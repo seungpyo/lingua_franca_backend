@@ -165,7 +165,7 @@ def lingua_franca_openai_proxy(req: https_fn.Request) -> https_fn.Response:
         Persona.grammar: current_message,
         Persona.vocab: current_message,
         Persona.politeness: current_message,
-        Persona.context: conversation_messages,
+        # Persona.context: conversation_messages,
     }
 
     print("persona-messages dump")
